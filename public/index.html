@@ -1,0 +1,752 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>月子中心订单管理系统</title>
+    <link rel="manifest" href="/manifest.json">
+    <meta name="theme-color" content="#667eea">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <link rel="apple-touch-icon" href="/icon-192.png">
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            padding: 20px;
+            color: #333;
+        }
+
+        .container {
+            max-width: 600px;
+            margin: 0 auto;
+        }
+
+        .header {
+            background: white;
+            padding: 20px;
+            border-radius: 12px;
+            margin-bottom: 20px;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+        }
+
+        .header h1 {
+            font-size: 20px;
+            color: #667eea;
+            margin-bottom: 10px;
+        }
+
+        .user-info {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            font-size: 14px;
+        }
+
+        .logout-btn {
+            background: #ef4444;
+            color: white;
+            border: none;
+            padding: 8px 16px;
+            border-radius: 6px;
+            cursor: pointer;
+            font-size: 14px;
+        }
+
+        .card {
+            background: white;
+            padding: 20px;
+            border-radius: 12px;
+            margin-bottom: 20px;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+        }
+
+        .card h2 {
+            font-size: 18px;
+            margin-bottom: 15px;
+            color: #667eea;
+        }
+
+        .form-group {
+            margin-bottom: 15px;
+        }
+
+        .form-group label {
+            display: block;
+            margin-bottom: 5px;
+            font-size: 14px;
+            color: #666;
+        }
+
+        .form-group input,
+        .form-group select,
+        .form-group textarea {
+            width: 100%;
+            padding: 12px;
+            border: 2px solid #e5e7eb;
+            border-radius: 8px;
+            font-size: 16px;
+            transition: border-color 0.3s;
+        }
+
+        .form-group input:focus,
+        .form-group select:focus,
+        .form-group textarea:focus {
+            outline: none;
+            border-color: #667eea;
+        }
+
+        .btn {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            border: none;
+            padding: 12px 24px;
+            border-radius: 8px;
+            font-size: 16px;
+            cursor: pointer;
+            width: 100%;
+            font-weight: 600;
+            transition: transform 0.2s;
+        }
+
+        .btn:active {
+            transform: scale(0.98);
+        }
+
+        .btn-secondary {
+            background: #9ca3af;
+        }
+
+        .order-item {
+            background: #f9fafb;
+            padding: 15px;
+            border-radius: 8px;
+            margin-bottom: 10px;
+            border-left: 4px solid #667eea;
+        }
+
+        .order-header {
+            display: flex;
+            justify-content: space-between;
+            margin-bottom: 10px;
+        }
+
+        .order-customer {
+            font-weight: 600;
+            font-size: 16px;
+        }
+
+        .order-status {
+            padding: 4px 12px;
+            border-radius: 12px;
+            font-size: 12px;
+            font-weight: 600;
+        }
+
+        .status-new {
+            background: #dbeafe;
+            color: #1e40af;
+        }
+
+        .status-following {
+            background: #fef3c7;
+            color: #92400e;
+        }
+
+        .status-done {
+            background: #d1fae5;
+            color: #065f46;
+        }
+
+        .order-details {
+            font-size: 14px;
+            color: #666;
+            line-height: 1.8;
+        }
+
+        .order-meta {
+            font-size: 12px;
+            color: #999;
+            margin-top: 10px;
+        }
+
+        .tabs {
+            display: flex;
+            gap: 10px;
+            margin-bottom: 20px;
+        }
+
+        .tab {
+            flex: 1;
+            padding: 12px;
+            background: rgba(255,255,255,0.3);
+            border: none;
+            border-radius: 8px;
+            color: white;
+            font-size: 14px;
+            cursor: pointer;
+            transition: all 0.3s;
+        }
+
+        .tab.active {
+            background: white;
+            color: #667eea;
+            font-weight: 600;
+        }
+
+        .filter-bar {
+            background: white;
+            padding: 15px;
+            border-radius: 12px;
+            margin-bottom: 20px;
+            display: flex;
+            gap: 10px;
+        }
+
+        .filter-bar select {
+            flex: 1;
+            padding: 8px;
+            border: 2px solid #e5e7eb;
+            border-radius: 6px;
+        }
+
+        .hidden {
+            display: none;
+        }
+
+        .loading {
+            text-align: center;
+            padding: 40px;
+            color: white;
+        }
+
+        .empty {
+            text-align: center;
+            padding: 40px;
+            color: rgba(255,255,255,0.8);
+        }
+
+        .toast {
+            position: fixed;
+            bottom: 20px;
+            left: 50%;
+            transform: translateX(-50%);
+            background: rgba(0,0,0,0.8);
+            color: white;
+            padding: 12px 24px;
+            border-radius: 8px;
+            z-index: 1000;
+            animation: slideUp 0.3s ease;
+        }
+
+        @keyframes slideUp {
+            from {
+                transform: translateX(-50%) translateY(100%);
+            }
+            to {
+                transform: translateX(-50%) translateY(0);
+            }
+        }
+
+        .login-container {
+            background: white;
+            padding: 40px 20px;
+            border-radius: 12px;
+            text-align: center;
+        }
+
+        .login-container h1 {
+            color: #667eea;
+            margin-bottom: 30px;
+        }
+
+        .quick-login {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 10px;
+            margin-top: 20px;
+        }
+
+        .quick-login-btn {
+            padding: 15px;
+            background: #f3f4f6;
+            border: 2px solid #e5e7eb;
+            border-radius: 8px;
+            cursor: pointer;
+            font-size: 14px;
+            transition: all 0.3s;
+        }
+
+        .quick-login-btn:hover {
+            background: #e5e7eb;
+            border-color: #667eea;
+        }
+
+        .export-btn {
+            background: #10b981;
+            margin-top: 10px;
+        }
+
+        .install-prompt {
+            background: white;
+            padding: 15px;
+            border-radius: 12px;
+            margin-bottom: 20px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+        }
+
+        .install-prompt-text {
+            flex: 1;
+            margin-right: 10px;
+        }
+
+        .install-prompt-text h3 {
+            font-size: 16px;
+            color: #667eea;
+            margin-bottom: 5px;
+        }
+
+        .install-prompt-text p {
+            font-size: 12px;
+            color: #666;
+        }
+
+        .install-btn {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 8px;
+            cursor: pointer;
+            font-size: 14px;
+            white-space: nowrap;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <!-- 登录页面 -->
+        <div id="loginPage" class="login-container">
+            <h1>🏥 月子中心订单管理</h1>
+            <div class="form-group">
+                <label>员工编号</label>
+                <input type="text" id="staffId" placeholder="请输入员工编号">
+            </div>
+            <button class="btn" onclick="login()">登录</button>
+
+            <div class="form-group" style="margin-top: 20px; text-align: left;">
+                <label>快速登录（测试）</label>
+            </div>
+            <div class="quick-login">
+                <button class="quick-login-btn" onclick="quickLogin('ADMIN', '李主管')">
+                    李主管<br><small>管理员</small>
+                </button>
+                <button class="quick-login-btn" onclick="quickLogin('STAFF_A', '小张')">
+                    小张<br><small>员工</small>
+                </button>
+                <button class="quick-login-btn" onclick="quickLogin('STAFF_B', '小李')">
+                    小李<br><small>员工</small>
+                </button>
+                <button class="quick-login-btn" onclick="quickLogin('STAFF_C', '小王')">
+                    小王<br><small>员工</small>
+                </button>
+            </div>
+        </div>
+
+        <!-- 主页面 -->
+        <div id="mainPage" class="hidden">
+            <!-- PWA安装提示 -->
+            <div id="installPrompt" class="install-prompt hidden">
+                <div class="install-prompt-text">
+                    <h3>📱 安装到手机桌面</h3>
+                    <p>点击按钮，添加到主屏幕，使用更方便</p>
+                </div>
+                <button class="install-btn" onclick="installApp()">安装</button>
+            </div>
+
+            <!-- 头部信息 -->
+            <div class="header">
+                <h1>🏥 月子中心订单管理</h1>
+                <div class="user-info">
+                    <span id="userInfo"></span>
+                    <button class="logout-btn" onclick="logout()">退出</button>
+                </div>
+            </div>
+
+            <!-- 标签页切换 -->
+            <div class="tabs">
+                <button class="tab active" onclick="switchTab('list')">订单列表</button>
+                <button class="tab" onclick="switchTab('create')">创建订单</button>
+            </div>
+
+            <!-- 订单列表页 -->
+            <div id="listPage">
+                <!-- 筛选栏 -->
+                <div class="filter-bar">
+                    <select id="statusFilter" onchange="loadOrders()">
+                        <option value="">全部状态</option>
+                        <option value="new">新订单</option>
+                        <option value="following">跟进中</option>
+                        <option value="done">已成交</option>
+                    </select>
+                    <select id="dateFilter" onchange="loadOrders()">
+                        <option value="">全部时间</option>
+                        <option value="today">今天</option>
+                        <option value="week">本周</option>
+                        <option value="month">本月</option>
+                    </select>
+                </div>
+
+                <div class="card">
+                    <h2>📋 我的订单</h2>
+                    <div id="ordersList"></div>
+                </div>
+
+                <button class="btn export-btn" onclick="exportOrders()">📤 导出Excel</button>
+            </div>
+
+            <!-- 创建订单页 -->
+            <div id="createPage" class="hidden">
+                <div class="card">
+                    <h2>📝 创建新订单</h2>
+                    <form id="orderForm" onsubmit="createOrder(event)">
+                        <div class="form-group">
+                            <label>客户姓名 *</label>
+                            <input type="text" id="customerName" required>
+                        </div>
+
+                        <div class="form-group">
+                            <label>客户电话 *</label>
+                            <input type="tel" id="customerPhone" required placeholder="请输入11位手机号">
+                        </div>
+
+                        <div class="form-group">
+                            <label>预产期 *</label>
+                            <input type="date" id="dueDate" required>
+                        </div>
+
+                        <div class="form-group">
+                            <label>预算（元）</label>
+                            <input type="number" id="budget" placeholder="例如：50000">
+                        </div>
+
+                        <div class="form-group">
+                            <label>房间类型</label>
+                            <select id="roomType">
+                                <option value="">请选择</option>
+                                <option value="套房">套房</option>
+                                <option value="单房">单房</option>
+                                <option value="双房">双房</option>
+                            </select>
+                        </div>
+
+                        <div class="form-group">
+                            <label>备注</label>
+                            <textarea id="notes" rows="3" placeholder="客户特殊需求等"></textarea>
+                        </div>
+
+                        <button type="submit" class="btn">创建订单</button>
+                        <button type="button" class="btn btn-secondary" style="margin-top: 10px;" onclick="switchTab('list')">取消</button>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // 全局变量
+        let currentUser = null;
+        let deferredPrompt = null;
+
+        // 初始化
+        document.addEventListener('DOMContentLoaded', function() {
+            // 检查登录状态
+            const savedUser = localStorage.getItem('currentUser');
+            if (savedUser) {
+                currentUser = JSON.parse(savedUser);
+                showMainPage();
+            }
+
+            // PWA安装提示
+            window.addEventListener('beforeinstallprompt', (e) => {
+                e.preventDefault();
+                deferredPrompt = e;
+                document.getElementById('installPrompt').classList.remove('hidden');
+            });
+        });
+
+        // 登录
+        function login() {
+            const staffId = document.getElementById('staffId').value.trim().toUpperCase();
+            if (!staffId) {
+                showToast('请输入员工编号');
+                return;
+            }
+            quickLogin(staffId, '员工');
+        }
+
+        // 快速登录
+        function quickLogin(staffId, name) {
+            const role = staffId === 'ADMIN' ? 'admin' : 'staff';
+            currentUser = {
+                id: staffId,
+                name: name,
+                role: role
+            };
+            localStorage.setItem('currentUser', JSON.stringify(currentUser));
+            showMainPage();
+            showToast('登录成功！');
+        }
+
+        // 退出登录
+        function logout() {
+            currentUser = null;
+            localStorage.removeItem('currentUser');
+            document.getElementById('loginPage').classList.remove('hidden');
+            document.getElementById('mainPage').classList.add('hidden');
+        }
+
+        // 显示主页面
+        function showMainPage() {
+            document.getElementById('loginPage').classList.add('hidden');
+            document.getElementById('mainPage').classList.remove('hidden');
+            document.getElementById('userInfo').textContent = `${currentUser.name} (${currentUser.role === 'admin' ? '主管' : '员工'})`;
+            loadOrders();
+        }
+
+        // 切换标签页
+        function switchTab(tab) {
+            document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+            event.target.classList.add('active');
+
+            if (tab === 'list') {
+                document.getElementById('listPage').classList.remove('hidden');
+                document.getElementById('createPage').classList.add('hidden');
+                loadOrders();
+            } else {
+                document.getElementById('listPage').classList.add('hidden');
+                document.getElementById('createPage').classList.remove('hidden');
+            }
+        }
+
+        // 加载订单列表
+        async function loadOrders() {
+            const listDiv = document.getElementById('ordersList');
+            listDiv.innerHTML = '<div class="loading">加载中...</div>';
+
+            try {
+                const statusFilter = document.getElementById('statusFilter').value;
+                const dateFilter = document.getElementById('dateFilter').value;
+
+                const response = await fetch('/api/orders', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        userId: currentUser.id,
+                        role: currentUser.role,
+                        statusFilter,
+                        dateFilter
+                    })
+                });
+
+                const data = await response.json();
+
+                if (data.success) {
+                    displayOrders(data.orders);
+                } else {
+                    listDiv.innerHTML = `<div class="empty">${data.message}</div>`;
+                }
+            } catch (error) {
+                console.error('加载订单失败:', error);
+                // 使用本地存储的数据作为后备
+                const localOrders = JSON.parse(localStorage.getItem('orders') || '[]');
+                displayOrders(localOrders.filter(order => {
+                    if (currentUser.role !== 'admin' && order.createdBy !== currentUser.id) {
+                        return false;
+                    }
+                    return true;
+                }));
+            }
+        }
+
+        // 显示订单列表
+        function displayOrders(orders) {
+            const listDiv = document.getElementById('ordersList');
+
+            if (orders.length === 0) {
+                listDiv.innerHTML = '<div class="empty">暂无订单</div>';
+                return;
+            }
+
+            listDiv.innerHTML = orders.map(order => `
+                <div class="order-item">
+                    <div class="order-header">
+                        <div class="order-customer">${order.customerName}</div>
+                        <div class="order-status status-${order.status}">${getStatusText(order.status)}</div>
+                    </div>
+                    <div class="order-details">
+                        <div>📞 ${order.customerPhone}</div>
+                        <div>📅 预产期: ${order.dueDate}</div>
+                        ${order.budget ? `<div>💰 预算: ¥${order.budget}</div>` : ''}
+                        ${order.roomType ? `<div>🏠 房型: ${order.roomType}</div>` : ''}
+                        ${order.notes ? `<div>📝 ${order.notes}</div>` : ''}
+                    </div>
+                    <div class="order-meta">
+                        创建人: ${order.createdByName} | ${formatTime(order.createdAt)}
+                    </div>
+                </div>
+            `).join('');
+        }
+
+        // 创建订单
+        async function createOrder(event) {
+            event.preventDefault();
+
+            const orderData = {
+                customerName: document.getElementById('customerName').value.trim(),
+                customerPhone: document.getElementById('customerPhone').value.trim(),
+                dueDate: document.getElementById('dueDate').value,
+                budget: document.getElementById('budget').value,
+                roomType: document.getElementById('roomType').value,
+                notes: document.getElementById('notes').value.trim(),
+                createdBy: currentUser.id,
+                createdByName: currentUser.name
+            };
+
+            // 验证电话号码
+            if (!/^1[3-9]\d{9}$/.test(orderData.customerPhone)) {
+                showToast('请输入正确的手机号码');
+                return;
+            }
+
+            try {
+                const response = await fetch('/api/orders/create', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(orderData)
+                });
+
+                const data = await response.json();
+
+                if (data.success) {
+                    showToast('订单创建成功！');
+
+                    // 保存到本地存储作为备份
+                    const localOrders = JSON.parse(localStorage.getItem('orders') || '[]');
+                    localOrders.unshift(data.order);
+                    localStorage.setItem('orders', JSON.stringify(localOrders));
+
+                    // 重置表单
+                    document.getElementById('orderForm').reset();
+                    switchTab('list');
+                } else {
+                    showToast(data.message || '创建失败');
+                }
+            } catch (error) {
+                console.error('创建订单失败:', error);
+                // 保存到本地存储
+                const newOrder = {
+                    ...orderData,
+                    id: Date.now().toString(),
+                    status: 'new',
+                    createdAt: new Date().toISOString()
+                };
+                const localOrders = JSON.parse(localStorage.getItem('orders') || '[]');
+                localOrders.unshift(newOrder);
+                localStorage.setItem('orders', JSON.stringify(localOrders));
+                showToast('订单创建成功！（离线模式）');
+                document.getElementById('orderForm').reset();
+                switchTab('list');
+            }
+        }
+
+        // 导出订单
+        function exportOrders() {
+            const localOrders = JSON.parse(localStorage.getItem('orders') || '[]');
+            if (localOrders.length === 0) {
+                showToast('暂无数据可导出');
+                return;
+            }
+
+            // 生成CSV
+            const headers = ['客户姓名', '客户电话', '预产期', '预算', '房间类型', '状态', '创建人', '创建时间'];
+            const rows = localOrders.map(order => [
+                order.customerName,
+                order.customerPhone,
+                order.dueDate,
+                order.budget || '',
+                order.roomType || '',
+                getStatusText(order.status),
+                order.createdByName,
+                formatTime(order.createdAt)
+            ]);
+
+            let csv = headers.join(',') + '\n';
+            csv += rows.map(row => row.join(',')).join('\n');
+
+            // 添加BOM以支持中文
+            const BOM = '\uFEFF';
+            const blob = new Blob([BOM + csv], { type: 'text/csv;charset=utf-8;' });
+            const link = document.createElement('a');
+            link.href = URL.createObjectURL(blob);
+            link.download = `订单列表_${new Date().toISOString().split('T')[0]}.csv`;
+            link.click();
+
+            showToast('导出成功！');
+        }
+
+        // 安装PWA
+        async function installApp() {
+            if (deferredPrompt) {
+                deferredPrompt.prompt();
+                const { outcome } = await deferredPrompt.userChoice;
+                if (outcome === 'accepted') {
+                    document.getElementById('installPrompt').classList.add('hidden');
+                }
+                deferredPrompt = null;
+            }
+        }
+
+        // 工具函数
+        function getStatusText(status) {
+            const statusMap = {
+                'new': '新订单',
+                'following': '跟进中',
+                'done': '已成交'
+            };
+            return statusMap[status] || status;
+        }
+
+        function formatTime(timeStr) {
+            if (!timeStr) return '';
+            const date = new Date(timeStr);
+            const now = new Date();
+            const diff = now - date;
+
+            if (diff < 60000) return '刚刚';
+            if (diff < 3600000) return `${Math.floor(diff / 60000)}分钟前`;
+            if (diff < 86400000) return `${Math.floor(diff / 3600000)}小时前`;
+
+            return `${date.getMonth() + 1}-${date.getDate()} ${date.getHours()}:${String(date.getMinutes()).padStart(2, '0')}`;
+        }
+
+        function showToast(message) {
+            const toast = document.createElement('div');
+            toast.className = 'toast';
+            toast.textContent = message;
+            document.body.appendChild(toast);
+            setTimeout(() => toast.remove(), 3000);
+        }
+    </script>
+</body>
+</html>
