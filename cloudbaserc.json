@@ -1,4 +1,6 @@
 {
+  "envId": "cloudbase-2gvcaqwp505619c2",
+  "version": "2.0",
   "hosting": {
     "publicPath": "./",
     "ignore": [
@@ -8,8 +10,10 @@
       "README.md",
       "DEPLOY.md",
       "ICONS.md",
+      "GITHUB_DEPLOY.md",
       "api",
-      "vercel.json"
+      "vercel.json",
+      "deploy"
     ]
   }
 }
