@@ -2,8 +2,14 @@
   "name": "postpartum-order-system",
   "version": "1.0.0",
   "description": "月子中心订单管理系统",
-  "scripts": {},
+  "main": "index.js",
+  "scripts": {
+    "start": "node index.js"
+  },
   "keywords": [],
   "author": "",
-  "license": "MIT"
+  "license": "MIT",
+  "dependencies": {
+    "@cloudbase/node-sdk": "^2.10.5"
+  }
 }

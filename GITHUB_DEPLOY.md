@@ -96,7 +96,8 @@ e:\the\pwa-app\
 ### 第二步：配置腾讯云（3分钟）
 
 1. **登录腾讯云CloudBase**
-   - 访问：https://console.cloud.tencent.com/tcb
+   - 访问：https://tcb.cloud.tencent.com/dev?envId=cloudbase-2gvcaqwp505619c2#/overview
+   - 或访问：https://tcb.cloud.tencent.com
    - 选择你的环境：`cloudbase-2gvcaqwp505619c2`
 
 2. **进入静态网站托管**

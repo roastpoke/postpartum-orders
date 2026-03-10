@@ -1,3 +1,13 @@
+const cloudbase = require('@cloudbase/node-sdk');
+const config = require('../../cloudbase.config.js');
+
+// 初始化CloudBase
+const app = cloudbase.init({
+  env: config.env
+});
+
+const db = app.database();
+
 export default async function handler(req, res) {
   if (req.method !== 'POST') {
     return res.status(405).json({ success: false, message: '方法不允许' });
@@ -6,17 +16,17 @@ export default async function handler(req, res) {
   try {
     const { userId, role, statusFilter, dateFilter } = req.body;
 
-    // 模拟数据库
-    let orders = global.orders || [];
+    // 构建查询条件
+    let query = db.collection('orders');
 
-    // 权限隔离：员工只能看自己的，主管可以看所有
+    // 权限过滤：员工只能看自己的，主管可以看所有
     if (role !== 'admin') {
-      orders = orders.filter(order => order.createdBy === userId);
+      query = query.where({ createdBy: userId });
     }
 
     // 状态筛选
     if (statusFilter) {
-      orders = orders.filter(order => order.status === statusFilter);
+      query = query.where({ status: statusFilter });
     }
 
     // 时间筛选
@@ -25,19 +35,22 @@ export default async function handler(req, res) {
       const today = new Date(now.getFullYear(), now.getMonth(), now.getDate());
 
       if (dateFilter === 'today') {
-        orders = orders.filter(order => new Date(order.createdAt) >= today);
+        query = query.where({ createdAt: db.command.gte(today.toISOString()) });
       } else if (dateFilter === 'week') {
-        const weekAgo = new Date(today - 7 * 24 * 60 * 60 * 1000);
-        orders = orders.filter(order => new Date(order.createdAt) >= weekAgo);
+        const weekAgo = new Date(today.getTime() - 7 * 24 * 60 * 60 * 1000);
+        query = query.where({ createdAt: db.command.gte(weekAgo.toISOString()) });
       } else if (dateFilter === 'month') {
-        const monthAgo = new Date(today - 30 * 24 * 60 * 60 * 1000);
-        orders = orders.filter(order => new Date(order.createdAt) >= monthAgo);
+        const monthAgo = new Date(today.getTime() - 30 * 24 * 60 * 60 * 1000);
+        query = query.where({ createdAt: db.command.gte(monthAgo.toISOString()) });
       }
     }
 
+    // 执行查询（按创建时间倒序）
+    const result = await query.orderBy('createdAt', 'desc').get();
+
     res.status(200).json({
       success: true,
-      orders: orders
+      orders: result.data
     });
 
   } catch (error) {
