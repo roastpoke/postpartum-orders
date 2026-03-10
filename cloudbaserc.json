@@ -1,0 +1,15 @@
+{
+  "hosting": {
+    "publicPath": "./",
+    "ignore": [
+      ".git",
+      ".gitignore",
+      "node_modules",
+      "README.md",
+      "DEPLOY.md",
+      "ICONS.md",
+      "api",
+      "vercel.json"
+    ]
+  }
+}
