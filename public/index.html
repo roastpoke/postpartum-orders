@@ -9,6 +9,8 @@
     <meta name="apple-mobile-web-app-capable" content="yes">
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
     <link rel="apple-touch-icon" href="/icon-192.png">
+    <!-- CloudBase Web SDK -->
+    <script src="https://static.cloudbase.net/cloudbase-js-sdk/8.9.17/cloudbase.full.js"></script>
     <style>
         * {
             margin: 0;
@@ -467,6 +469,15 @@
         // 全局变量
         let currentUser = null;
         let deferredPrompt = null;
+        let db = null; // CloudBase 数据库实例
+
+        // 初始化 CloudBase
+        const app = cloudbase.init({
+            env: 'cloudbase-2gvcaqwp505619c2'
+        });
+
+        // 获取数据库引用
+        db = app.database();
 
         // 初始化
         document.addEventListener('DOMContentLoaded', function() {
@@ -551,26 +562,42 @@
                 const statusFilter = document.getElementById('statusFilter').value;
                 const dateFilter = document.getElementById('dateFilter').value;
 
-                const response = await fetch('/api/orders', {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({
-                        userId: currentUser.id,
-                        role: currentUser.role,
-                        statusFilter,
-                        dateFilter
-                    })
-                });
+                // 构建查询条件
+                let query = db.collection('orders');
 
-                const data = await response.json();
-
-                if (data.success) {
-                    // ✅ 关键：同步数据到本地存储
-                    localStorage.setItem('orders', JSON.stringify(data.orders));
-                    displayOrders(data.orders);
-                } else {
-                    listDiv.innerHTML = `<div class="empty">${data.message}</div>`;
+                // 权限过滤：员工只能看自己的，主管可以看所有
+                if (currentUser.role !== 'admin') {
+                    query = query.where({ createdBy: currentUser.id });
                 }
+
+                // 状态筛选
+                if (statusFilter) {
+                    query = query.where({ status: statusFilter });
+                }
+
+                // 时间筛选
+                if (dateFilter) {
+                    const now = new Date();
+                    const today = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+
+                    if (dateFilter === 'today') {
+                        query = query.where({ createdAt: db.command.gte(today.toISOString()) });
+                    } else if (dateFilter === 'week') {
+                        const weekAgo = new Date(today.getTime() - 7 * 24 * 60 * 60 * 1000);
+                        query = query.where({ createdAt: db.command.gte(weekAgo.toISOString()) });
+                    } else if (dateFilter === 'month') {
+                        const monthAgo = new Date(today.getTime() - 30 * 24 * 60 * 60 * 1000);
+                        query = query.where({ createdAt: db.command.gte(monthAgo.toISOString()) });
+                    }
+                }
+
+                // 执行查询（按创建时间倒序）
+                const result = await query.orderBy('createdAt', 'desc').get();
+
+                // 同步数据到本地存储
+                localStorage.setItem('orders', JSON.stringify(result.data));
+                displayOrders(result.data);
+
             } catch (error) {
                 console.error('加载订单失败:', error);
                 // 使用本地存储的数据作为后备
@@ -640,43 +667,53 @@
             }
 
             try {
-                const response = await fetch('/api/orders/create', {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify(orderData)
-                });
+                // 1. 检查重复订单（24小时内）
+                const now = new Date();
+                const oneDayAgo = new Date(now.getTime() - 24 * 60 * 60 * 1000);
 
-                const data = await response.json();
+                const duplicateResult = await db.collection('orders')
+                    .where({
+                        customerPhone: orderData.customerPhone,
+                        createdAt: db.command.gte(oneDayAgo.toISOString())
+                    })
+                    .get();
 
-                if (data.success) {
-                    showToast('订单创建成功！');
-
-                    // 保存到本地存储作为备份
-                    const localOrders = JSON.parse(localStorage.getItem('orders') || '[]');
-                    localOrders.unshift(data.order);
-                    localStorage.setItem('orders', JSON.stringify(localOrders));
-
-                    // 重置表单
-                    document.getElementById('orderForm').reset();
-                    switchTab('list');
-                } else {
-                    showToast(data.message || '创建失败');
+                if (duplicateResult.data.length > 0) {
+                    const duplicateOrder = duplicateResult.data[0];
+                    const orderTime = new Date(duplicateOrder.createdAt);
+                    const timeStr = `${orderTime.getMonth() + 1}-${orderTime.getDate()} ${orderTime.getHours()}:${String(orderTime.getMinutes()).padStart(2, '0')}`;
+                    showToast(`该客户已在 ${timeStr} 被录入，请联系 ${duplicateOrder.createdByName}`);
+                    return;
                 }
-            } catch (error) {
-                console.error('创建订单失败:', error);
-                // 保存到本地存储
+
+                // 2. 创建订单到数据库
                 const newOrder = {
                     ...orderData,
-                    id: Date.now().toString(),
                     status: 'new',
-                    createdAt: new Date().toISOString()
+                    createdAt: now.toISOString()
                 };
+
+                const result = await db.collection('orders').add(newOrder);
+
+                // 3. 成功后更新本地存储
+                const savedOrder = {
+                    id: result.id,
+                    ...newOrder
+                };
+
                 const localOrders = JSON.parse(localStorage.getItem('orders') || '[]');
-                localOrders.unshift(newOrder);
+                localOrders.unshift(savedOrder);
                 localStorage.setItem('orders', JSON.stringify(localOrders));
-                showToast('订单创建成功！（离线模式）');
+
+                showToast('订单创建成功！');
+
+                // 重置表单
                 document.getElementById('orderForm').reset();
                 switchTab('list');
+
+            } catch (error) {
+                console.error('创建订单失败:', error);
+                showToast('创建失败，请重试');
             }
         }
 
